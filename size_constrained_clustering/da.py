@@ -43,7 +43,7 @@ class DeterministicAnnealing(base.Base):
         self._eta = None
         self._demands_prob = None
         random.seed(random_state)
-        np.random.seed(random_state)
+        # np.random.seed(random_state)
 
     def fit(self, X, demands_prob=None):
         # setting T, loop
