@@ -1,121 +1,62 @@
 ## Size Constrained Clustering Solver
-[![Build Status](https://travis-ci.org/jingw2/size_constrained_clustering.svg?branch=master)](https://travis-ci.org/jingw2/size_constrained_clustering)
-[![PyPI version](https://badge.fury.io/py/size-constrained-clustering.svg)](https://badge.fury.io/py/size-constrained-clustering)
-![GitHub](https://img.shields.io/github/license/jingw2/size_constrained_clustering)
-[![codecov](https://codecov.io/gh/jingw2/size_constrained_clustering/branch/master/graph/badge.svg)](https://codecov.io/gh/jingw2/size_constrained_clustering)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/size-constrained-clustering)
-![Codecov](https://img.shields.io/codecov/c/github/jingw2/size_constrained_clustering)
 
-
-Implementation of Size Constrained Clustering. 
+Implementation of Deterministic Annealing Size Constrained Clustering. 
 Size constrained clustering can be treated as an optimization problem. Details could be found in a set of reference paper.
 
+This is a fork of https://github.com/jingw2/size_constrained_clustering that solves installation issues. And mantains only the Determinstic Annealing clustering.
+
 ### Installation
-Requirement Python >= 3.6, Numpy >= 1.13, Cython >= 0.29
+Requirement Python >= 3.6, Numpy >= 1.13
 * install from PyPI
 ```shell
-pip install size-constrained-clustering
+pip install light-size-constrained-clustering
 ```
 
 ### Methods
-* Fuzzy C-means Algorithm: Similar to KMeans, but use membership probability, not 0 or 1
-* Same Size Contrained KMeans Heuristics: Use Heuristics methods to reach same size clustering
-* Same Size Contrained KMeans Inspired by Minimum Cost Flow Problem
-* Minimum and Maximum Size Constrained KMeans Inspired by Minimum Cost Flow Problem
 * Deterministic Annealling Algorithm: Input target cluster distribution, return correspondent clusters
-* Shrinkage Clustering: base algorithm and minimum size constraints
 
 ### Usage:
-```python
-# setup
-from size_constrained_clustering import fcm, equal, minmax, shrinkage
-# by default it is euclidean distance, but can select others
-from sklearn.metrics.pairwise import haversine_distances
-import numpy as np
-```
-
-Fuzzy C-means 
-```python
-n_samples = 2000
-n_clusters = 4
-centers = [(-5, -5), (0, 0), (5, 5), (7, 10)]
-X, _ = make_blobs(n_samples=n_samples, n_features=2, cluster_std=1.0,
-                    centers=centers, shuffle=False, random_state=42)
-model = fcm.FCM(n_clusters)
-# use other distance function: e.g. haversine distance
-# model = fcm.FCM(n_clusters, distance_func=haversine_distances)
-model.fit(X)
-centers = model.cluster_centers_
-labels = model.labels_
-```
-![alt text](https://github.com/jingw2/size_constrained_clustering/blob/master/pic/fcm.png)
-
-
-Equal Size Constraint
-```python
-n_samples = 2000
-n_clusters = 3
-X = np.random.rand(n_samples, 2)
-# use minimum cost flow framework to solve
-model = equal.SameSizeKMeansMinCostFlow(n_clusters)
-# use heuristics method to solve
-model = equal.SameSizeKMeansHeuristics(n_clusters)
-model.fit(X)
-centers = model.cluster_centers_
-labels = model.labels_
-```
-![alt text](https://github.com/jingw2/size_constrained_clustering/blob/master/pic/equal.png)
-
-Cluster size: 667, 667 and 666 in the figure above.
-
-Minimum and Maximum Size Constraint
-```python
-n_samples = 2000
-n_clusters = 3
-X = np.random.rand(n_samples, 2)
-model = minmax.MinMaxKMeansMinCostFlow(n_clusters, size_min=400,   size_max=800)
-model.fit(X)
-centers = model.cluster_centers_
-labels = model.labels_
-```
-![alt text](https://github.com/jingw2/size_constrained_clustering/blob/master/pic/minmax.png)
-
-Cluster size: 753, 645 and 602 in the figure above.
 
 Deterministic Annealing
 ```python
-n_samples = 2000
-n_clusters = 3
+# setup
+from light_size_constrained_clustering import da
+import numpy as np
+
+n_samples = 40 # number cells in spot
+n_clusters = 4 # distinct number of cell types
+distribution= [0.4,0.3,0.2,0.1] # distribution of each cell type (form deconv)
+seed = 17
+
+print(np.sum(distribution))
+np.random.seed(seed)
+
 X = np.random.rand(n_samples, 2)
 # distribution is the distribution of cluster sizes
-model = da.DeterministicAnnealing(n_clusters, distribution=[0.1, 0.6, 0.3])
+model = da.DeterministicAnnealing(n_clusters, distribution= distribution, random_state=seed)
+
 model.fit(X)
 centers = model.cluster_centers_
 labels = model.labels_
+print("Labels:")
+print(labels)
+print("Elements in cluster 0: ", np.count_nonzero(labels == 0))
+print("Elements in cluster 1: ", np.count_nonzero(labels == 1))
+print("Elements in cluster 2: ", np.count_nonzero(labels == 2))
+print("Elements in cluster 3: ", np.count_nonzero(labels == 3))
 ```
-![alt text](https://github.com/jingw2/size_constrained_clustering/blob/master/pic/da.png)
 
-Cluster size: 1200, 600 and 200 in the figure above, corresponding to distribution [0.6, 0.3, 0.1]
+In case of provided distributions not being respected due to lack of convergence, distribution can
+be nforced by using the parameter `enforce_cluster_distribution`
 
-Shrinkage Clustering
+```model.fit(X, enforce_cluster_distribution=True)```
 
-The result might be not available.
-```python
-n_samples = 1000
-n_clusters = 4
-centers = [(-5, -5), (0, 0), (5, 5), (7, 10)]
-X, _ = make_blobs(n_samples=n_samples, n_features=2, cluster_std=1.0, centers=centers, shuffle=False, random_state=42)
 
-model = shrinkage.Shrinkage(n_clusters, size_min=100)
-model.fit(X)
-centers = model.cluster_centers_
-labels = model.labels_
-```
-![alt text](https://github.com/jingw2/size_constrained_clustering/blob/master/pic/shrinkage.png)
+Cluster size: 16, 12, 8 and 4 in the figure above, corresponding to distribution [0.4, 0.3, 0.2, 0.1]
 
 
 ## Copyright
-Copyright (c) 2020 Jing Wang. Released under the MIT License. 
+Copyright (c) 2023 Jing Wang & Albert Pla. Released under the MIT License. 
 
 Third-party copyright in this distribution is noted where applicable.
 
